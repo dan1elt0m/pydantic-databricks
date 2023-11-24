@@ -2,10 +2,10 @@
 # It is not intended for manual editing.
 
 [metadata]
-groups = ["default", "test", "linting"]
+groups = ["default", "test", "linting", "misc"]
 strategy = ["cross_platform"]
 lock_version = "4.4"
-content_hash = "sha256:0c78a248dbe0234ff9d406f1c57268d1d74a0fdb22c106d894f8db2a36254306"
+content_hash = "sha256:b52c4e9eef64b4006a10c22829010988955134fc4e02c27941cc445f7308b7a5"
 
 [[package]]
 name = "annotated-types"
@@ -190,6 +190,19 @@ files = [
 ]
 
 [[package]]
+name = "pydantic-spark"
+version = "1.0.1"
+requires_python = ">=3.8,<4.0"
+summary = "Converting pydantic classes to spark schemas"
+dependencies = [
+    "pydantic<3.0.0,>=2.5.2",
+]
+files = [
+    {file = "pydantic_spark-1.0.1-py3-none-any.whl", hash = "sha256:51900d2e273b1be232fc1e0fb7c2d259f179daa1edd25754e07e4f7653def32e"},
+    {file = "pydantic_spark-1.0.1.tar.gz", hash = "sha256:ddfa8ad977de941e240310b5c0a2aefbc33f92dd303f5a6d06e9bb4ba90959e8"},
+]
+
+[[package]]
 name = "pytest"
 version = "7.4.3"
 requires_python = ">=3.7"
@@ -230,6 +243,16 @@ files = [
     {file = "ruff-0.1.6-py3-none-win_amd64.whl", hash = "sha256:4558b3e178145491e9bc3b2ee3c4b42f19d19384eaa5c59d10acf6e8f8b57e33"},
     {file = "ruff-0.1.6-py3-none-win_arm64.whl", hash = "sha256:03910e81df0d8db0e30050725a5802441c2022ea3ae4fe0609b76081731accbc"},
     {file = "ruff-0.1.6.tar.gz", hash = "sha256:1b09f29b16c6ead5ea6b097ef2764b42372aebe363722f1605ecbcd2b9207184"},
+]
+
+[[package]]
+name = "setuptools"
+version = "69.0.2"
+requires_python = ">=3.8"
+summary = "Easily download, build, install, upgrade, and uninstall Python packages"
+files = [
+    {file = "setuptools-69.0.2-py3-none-any.whl", hash = "sha256:1e8fdff6797d3865f37397be788a4e3cba233608e9b509382a2777d25ebde7f2"},
+    {file = "setuptools-69.0.2.tar.gz", hash = "sha256:735896e78a4742605974de002ac60562d286fa8051a7e2299445e8e8fbb01aa6"},
 ]
 
 [[package]]
