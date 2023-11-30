@@ -1,0 +1,39 @@
+{{ "CREATE OR REPLACE " ~ ("EXTERNAL " if table_dict.get("external") else "") ~ "TABLE" if table_dict.get("replace_table") else "CREATE " ~ ("EXTERNAL " if table_dict.get("external") else "") ~ "TABLE" }}{{ " IF NOT EXISTS" if table_dict.get("if_not_exists") else "" }} {{ table_dict["table_name"] }}{% if table_dict.get("table_specification") %}
+  (
+    {%- for column in table_dict["table_specification"]["columns"] %}
+      {{ column["column_identifier"] }} {{ column["column_type"] }}
+      {%- if column.get("column_properties") %}
+        {%- for prop in column["column_properties"] %}
+          {{ prop }}
+        {%- endfor %}
+      {%- endif %}
+      {%- if not loop.last %},{%- endif %}
+    {%- endfor %}
+    {%- if table_dict["table_specification"].get("table_constraints") %}
+      {%- for constraint in table_dict["table_specification"]["table_constraints"] %}
+        {{ constraint }}
+      {%- endfor %}
+    {%- endif %}
+  )
+{%- endif %}
+{% if table_dict.get("using_data_source") %}
+  USING {{ table_dict["using_data_source"] }}
+{%- endif %}
+{% if table_dict.get("comment") %}
+  COMMENT '{{ table_dict["comment"] }}'
+{%- endif %}
+{% if table_dict.get("table_properties") %}
+  TBLPROPERTIES ({{ table_dict["table_properties"] }})
+{%- endif %}
+{% if table_dict.get("options") %}
+  OPTIONS({{ table_dict["options"] }})
+{%- endif %}
+{% if table_dict.get("partition_columns") %}
+  PARTITIONED BY ({{ table_dict["partition_columns"] }})
+{%- endif %}
+{% if table_dict.get("storage_location") %}
+  LOCATION '{{ table_dict["storage_location"] }}'
+{%- endif %}
+{% if table_dict.get("as_query") %}
+  AS {{ table_dict["as_query"] }}
+{%- endif %}
