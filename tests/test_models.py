@@ -163,3 +163,27 @@ def test_create_table_with_comment():
 
     result = Schema.create_table()
     assert "COMMENT 'test comment'" in result
+
+
+def test_create_table_complex(spark):
+    class Schema(DatabricksModel):
+        _table_name = "test"
+        _schema_name = "default"
+        _comment = "test comment"
+        _table_properties = {"spark.sql.sources.partitionOverwriteMode": "dynamic"}
+        _options = {"test": "abc"}
+        _partition_columns = ["col1"]
+        _table_create_mode = CreateMode.CREATE_IF_NOT_EXISTS
+        _table_data_source = DataSource.PARQUET
+
+        col1: str
+        col2: int
+
+    result = Schema.create_table()
+    assert "CREATE TABLE IF NOT EXISTS default.test" in result
+    spark.sql(result)
+    table_properties = spark.sql("show tblproperties default.test").collect()
+    assert table_properties[0]["key"] == "option.test"
+    assert table_properties[0]["value"] == "abc"
+    assert table_properties[1]["key"] == "spark.sql.sources.partitionOverwriteMode"
+    assert table_properties[1]["value"] == "dynamic"
