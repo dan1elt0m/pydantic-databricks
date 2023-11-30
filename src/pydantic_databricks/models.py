@@ -4,7 +4,7 @@ import os
 from dataclasses import dataclass
 from enum import Enum
 from itertools import chain
-from typing import Any, List, Type
+from typing import Any, List
 
 from jinja2 import Template
 from pydantic import BaseModel
@@ -66,27 +66,7 @@ class DataSource(str, Enum):
     LIBSVM = "LIBSVM"
 
 
-def get_column_definition(model: Type[DatabricksModel]) -> List[TableColumn]:
-    """Returns the column definition including the sql types for the model"""
-    schema = model.spark_schema()
-    columns = []
-    for field in schema.get("fields"):
-        column_properties = ["NOT NULL"] if not field.get("nullable") else []
-        column = TableColumn(
-            column_identifier=field.get("name"),
-            column_type=field.get("type").upper(),
-            column_properties=column_properties,
-        )
-        columns.append(column)
-    return columns
-
-
-def get_table_properties(table_properties: dict[str, str]) -> str:
-    """Returns the table properties as a string"""
-    return "(" + ", ".join([f"'{key}'='{value}'" for key, value in table_properties.items()]) + ")"
-
-
-def render_template(table_config: TableConfig) -> str:
+def render_create_table_template(table_config: TableConfig) -> str:
     """Renders the jinja template with the table config"""
     from importlib import resources as impresources
 
@@ -243,13 +223,12 @@ class DatabricksModel(SparkBase):
     @classmethod
     def create_table(cls) -> str:
         """Returns the sql statement to create the table in databricks"""
-        column_definition = get_column_definition(cls)
         table_config = TableConfig(
             replace_table=cls.table_create_mode.value == CreateMode.CREATE_OR_REPLACE.value,
             external=cls.storage_location is not None,
             if_not_exists=cls.table_create_mode.value == CreateMode.CREATE_IF_NOT_EXISTS.value,
             table_name=cls.full_table_name,
-            table_specification=TableSpecification(columns=column_definition),
+            table_specification=TableSpecification(columns=cls.column_definition()),
             table_properties=cls.table_properties,
             options=cls.options,
             using_data_source=str(cls.table_data_source.value),
@@ -257,7 +236,7 @@ class DatabricksModel(SparkBase):
             storage_location=cls.storage_location,
             comment=cls._get_field("_comment"),
         )
-        return render_template(table_config)
+        return render_create_table_template(table_config)
 
 
 class ColumnProperty(BaseModel):
