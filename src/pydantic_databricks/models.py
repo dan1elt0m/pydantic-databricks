@@ -211,11 +211,9 @@ class DatabricksModel(SparkBase):
         schema = cls.spark_schema()
         columns = []
         for field in schema.get("fields"):
+            # Not null only supported in root
             column_properties = ["NOT NULL"] if not field.get("nullable") else []
-            if isinstance(field.get("type"), dict) and field.get("type").get("type") == "struct":
-                column_type = handle_struct_type(field.get("type").get("fields"))
-            else:
-                column_type = field.get("type").upper()
+            column_type = get_column_type(field)
             column = TableColumn(
                 column_identifier=field.get("name"),
                 column_type=column_type,
@@ -282,3 +280,22 @@ def handle_struct_type(fields: List[dict[str, Any]]) -> str:
         else:
             columns.append(f"{field.get('name')}:{field.get('type').upper()}")
     return f"struct<{','.join(columns)}>"
+
+
+def get_column_type(field: dict[str, Any]) -> str:
+    """Returns the column type for a given field"""
+    if isinstance(field.get("type"), dict) and field.get("type").get("type") == "array":
+        element_type = field.get("type").get("elementType")
+        if isinstance(element_type, dict):
+            if element_type.get("type") == "struct":
+                return handle_struct_type(element_type.get("fields"))
+            return f"array<{get_column_type(element_type.get('fields'))}>"
+        return f"array<{field.get('type').get('elementType')}>"
+    if isinstance(field.get("type"), dict) and field.get("type").get("type") == "struct":
+        return handle_struct_type(field.get("type").get("fields"))
+    if isinstance(field.get("type"), dict) and field.get("type").get("type") == "map":
+        return f"map<string,{get_column_type(field.get('type').get('valueType'))}>"
+    if field.get("type") == "struct":
+        return handle_struct_type(field.get("fields"))
+
+    return field.get("type").upper()

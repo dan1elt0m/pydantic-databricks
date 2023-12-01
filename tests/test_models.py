@@ -1,9 +1,20 @@
-from typing import Optional
+from datetime import datetime
+from typing import Dict, List, Optional
 
 import pytest
 from pydantic import BaseModel
 from pydantic_databricks.models import CreateMode, DatabricksModel, DataSource
-from pyspark.sql.types import BooleanType, DoubleType, LongType, StringType, StructField, StructType
+from pyspark.sql.types import (
+    ArrayType,
+    BooleanType,
+    DoubleType,
+    LongType,
+    MapType,
+    StringType,
+    StructField,
+    StructType,
+    TimestampType,
+)
 
 
 def test_create_table(spark):
@@ -32,50 +43,71 @@ def test_create_table(spark):
     assert table_description.collect()
 
 
-def test_create_table_nested(spark):
-    class DeeplyNestedSchema(BaseModel):
-        col_deep: str
+def test_create_table_complex_structure(spark):
+    class Nested2Model(BaseModel):
+        c111: str
 
-    class NestedSchema(BaseModel):
-        col1: str
-        col2: int
-        col3: DeeplyNestedSchema
+    class NestedModel(BaseModel):
+        c11: Nested2Model
 
-    class Schema(DatabricksModel):
+    class ComplexTestModel(DatabricksModel):
         _table_name = "test"
         _schema_name = "default"
 
-        col1: str
-        col2: int
-        col3: float
-        col4: Optional[bool]
-        col5: NestedSchema
+        c1: List[str]
+        c2: NestedModel
+        c3: List[NestedModel]
+        c4: List[datetime]
+        c5: Dict[str, NestedModel]
 
-    result = Schema.create_table()
+    result = ComplexTestModel.create_table()
     assert "CREATE TABLE default.test" in result
 
     spark.sql(result)
     df = spark.sql("SELECT * FROM default.test")
-    assert df.schema.fields == [
-        StructField("col1", StringType(), False),
-        StructField("col2", LongType(), False),
-        StructField("col3", DoubleType(), False),
-        StructField("col4", BooleanType(), True),
-        StructField(
-            "col5",
-            StructType(
-                [
-                    StructField("col1", StringType(), True),
-                    StructField("col2", LongType(), True),
-                    StructField("col3", StructType([StructField("col_deep", StringType(), True)])),
-                ]
+    assert (
+        df.schema.fields
+        == [
+            StructField("c1", ArrayType(StringType(), True), False),
+            StructField(
+                "c2",
+                StructType([StructField("c11", StructType([StructField("c111", StringType(), True)]), True)]),
+                False,
             ),
-            False,
-        ),
-    ]
-
-    table_description = spark.sql("describe table default.test")
-    assert table_description.collect()
+            StructField(
+                "c3",
+                StructType([StructField("c11", StructType([StructField("c111", StringType(), True)]), True)]),
+                False,
+            ),
+            StructField("c4", ArrayType(TimestampType(), True), False),
+            StructField(
+                "c5",
+                MapType(
+                    StringType(),
+                    StructType([StructField("c11", StructType([StructField("c111", StringType(), True)]), True)]),
+                    True,
+                ),
+                False,
+            ),
+        ]
+        != [
+            StructField("col1", StringType(), False),
+            StructField("col2", LongType(), False),
+            StructField("col3", DoubleType(), False),
+            StructField("col4", BooleanType(), True),
+            StructField(
+                "col5",
+                StructType(
+                    [
+                        StructField("col1", StringType(), True),
+                        StructField("col2", LongType(), True),
+                        StructField("col3", StructType([StructField("col_deep", StringType(), True)]), True),
+                    ]
+                ),
+                False,
+            ),
+        ]
+    )
 
 
 def test_create_table_partition_columns(spark):
