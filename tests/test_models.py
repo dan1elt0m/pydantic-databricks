@@ -1,8 +1,9 @@
 from typing import Optional
 
 import pytest
+from pydantic import BaseModel
 from pydantic_databricks.models import CreateMode, DatabricksModel, DataSource
-from pyspark.sql.types import BooleanType, DoubleType, LongType, StringType, StructField
+from pyspark.sql.types import BooleanType, DoubleType, LongType, StringType, StructField, StructType
 
 
 def test_create_table(spark):
@@ -25,6 +26,52 @@ def test_create_table(spark):
         StructField("col2", LongType(), False),
         StructField("col3", DoubleType(), False),
         StructField("col4", BooleanType(), True),
+    ]
+
+    table_description = spark.sql("describe table default.test")
+    assert table_description.collect()
+
+
+def test_create_table_nested(spark):
+    class DeeplyNestedSchema(BaseModel):
+        col_deep: str
+
+    class NestedSchema(BaseModel):
+        col1: str
+        col2: int
+        col3: DeeplyNestedSchema
+
+    class Schema(DatabricksModel):
+        _table_name = "test"
+        _schema_name = "default"
+
+        col1: str
+        col2: int
+        col3: float
+        col4: Optional[bool]
+        col5: NestedSchema
+
+    result = Schema.create_table()
+    assert "CREATE TABLE default.test" in result
+
+    spark.sql(result)
+    df = spark.sql("SELECT * FROM default.test")
+    assert df.schema.fields == [
+        StructField("col1", StringType(), False),
+        StructField("col2", LongType(), False),
+        StructField("col3", DoubleType(), False),
+        StructField("col4", BooleanType(), True),
+        StructField(
+            "col5",
+            StructType(
+                [
+                    StructField("col1", StringType(), True),
+                    StructField("col2", LongType(), True),
+                    StructField("col3", StructType([StructField("col_deep", StringType(), True)])),
+                ]
+            ),
+            False,
+        ),
     ]
 
     table_description = spark.sql("describe table default.test")

@@ -212,9 +212,13 @@ class DatabricksModel(SparkBase):
         columns = []
         for field in schema.get("fields"):
             column_properties = ["NOT NULL"] if not field.get("nullable") else []
+            if isinstance(field.get("type"), dict) and field.get("type").get("type") == "struct":
+                column_type = handle_struct_type(field.get("type").get("fields"))
+            else:
+                column_type = field.get("type").upper()
             column = TableColumn(
                 column_identifier=field.get("name"),
-                column_type=field.get("type").upper(),
+                column_type=column_type,
                 column_properties=column_properties,
             )
             columns.append(column)
@@ -267,3 +271,14 @@ class TableConfig(BaseModel):
     options: None | str
     storage_location: None | str
     comment: None | str
+
+
+def handle_struct_type(fields: List[dict[str, Any]]) -> str:
+    """recursive function that takes in a list of fields and returns a string of the struct type"""
+    columns = []
+    for field in fields:
+        if isinstance(field.get("type"), dict) and field.get("type").get("type") == "struct":
+            columns.append(f"{field.get('name')}:{handle_struct_type(field.get('type').get('fields'))}")
+        else:
+            columns.append(f"{field.get('name')}:{field.get('type').upper()}")
+    return f"struct<{','.join(columns)}>"
