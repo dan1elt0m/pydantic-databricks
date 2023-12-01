@@ -86,7 +86,6 @@ class DatabricksModel(SparkBase):
 
     - _table_name: the name of the table
     - _schema_name: the name of the schema
-    - _grants: the grants for the table
 
     The _catalog_name is optional, if not given it will be ignored
     """
