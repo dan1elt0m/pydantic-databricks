@@ -35,7 +35,7 @@ spark.sql(Schema.create_table())
     
 Generated SQL:
 ```sql
-CREATE TABLE test_schema.test (col1 STRING, col2 BIGINT, col3 DOUBLE) USING DELTA; 
+CREATE TABLE test_schema.test (col1 STRING NOT NULL, col2 BIGINT NOT NULL, col3 DOUBLE NOT NULL) USING DELTA; 
 ```
 
 ## Currently Supported Options
@@ -44,7 +44,7 @@ CREATE TABLE test_schema.test (col1 STRING, col2 BIGINT, col3 DOUBLE) USING DELT
 - `_schema_name`: The schema name for the table (required).
 - `_table_name`: The name of the table (required).
 - `_grants`: A set of Grant objects. Default is `None`.
-- `_location_prefix`: The location prefix for external tables. Default is `None`. If set, then the table is created as an external table.
+- `_location_prefix`: The location prefix for external tables. Default is `None`. If set, then the table is created as an external table. The prefix will be appended with the full table name.
 - `_table_properties`: A dictionary of table properties.
 - `_table_create_mode`: The mode for table creation. Default is `CreateMode.CREATE`.
 - `_table_data_source`: The data source for the table. Default is `DataSource.DELTA`.
