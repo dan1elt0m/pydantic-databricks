@@ -1,9 +1,9 @@
 [project]
 name = "pydantic-databricks"
-version = "0.1.0"
+version = "0.2.0"
 description = "Databricks helpers for Pydantic models"
 authors = [
-    {name = "Daniel Tom", email = "daniel.tom@xebia.com"},
+    { name = "Daniel Tom", email = "daniel.tom@xebia.com" },
 ]
 dependencies = [
     "pydantic>=2.5.2",
@@ -12,10 +12,14 @@ dependencies = [
 ]
 requires-python = ">= 3.9"
 readme = "README.md"
-license = {text = "MIT"}
+
+[project.license]
+text = "MIT"
 
 [build-system]
-requires = ["pdm-backend"]
+requires = [
+    "pdm-backend",
+]
 build-backend = "pdm.backend"
 
 [tool.pdm.dev-dependencies]
@@ -32,8 +36,6 @@ misc = [
 ]
 
 [tool.ruff]
-# https://beta.ruff.rs/docs/rules/
-# https://beta.ruff.rs/docs/settings/
 ignore = [
     "FBT001",
     "FBT002",
@@ -42,18 +44,18 @@ ignore = [
     "N815",
     "DTZ007",
     "TRY003",
-    "A003",    # shadow built-in types
-    "ANN002",  # type annotation for **kwargs
-    "ANN003",  # type annotation for *args
-    "ANN102",  # Missing type annotation for `cls` in classmethod
-    "D101",    # docstring in public classes
-    "D102",    # docstring in public methods
-    "D103",    # docstring in public functions
-    "DTZ",     # timezone information in datetimes
-    "RUF012",  # causes failures in pydantic models
-    "PLR0911", # for some reason can't ignore this on func definition
-    "COM812",  # Interferes with formatter
-    "ISC001",  # Interferes with formatter
+    "A003",
+    "ANN002",
+    "ANN003",
+    "ANN102",
+    "D101",
+    "D102",
+    "D103",
+    "DTZ",
+    "RUF012",
+    "PLR0911",
+    "COM812",
+    "ISC001",
 ]
 extend-select = [
     "I",
@@ -96,7 +98,10 @@ extend-select = [
 ]
 line-length = 120
 target-version = "py310"
-exclude = ["deploy", ".venv"]
+exclude = [
+    "deploy",
+    ".venv",
+]
 
 [tool.ruff.per-file-ignores]
 "tests/*" = [
@@ -113,7 +118,13 @@ exclude = ["deploy", ".venv"]
     "PLR0913",
     "PGH005",
 ]
-"**/alembic/*" = ["D101", "D102", "D103", "D419", "I002"]
+"**/alembic/*" = [
+    "D101",
+    "D102",
+    "D103",
+    "D419",
+    "I002",
+]
 
 [tool.ruff.pylint]
 max-args = 7
