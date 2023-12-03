@@ -1,0 +1,27 @@
+{% macro generate_constraint_sql(constraint) %}
+    {% if constraint.type == 'check_constraint' %}
+        ALTER TABLE {{ table_name }}
+        ADD CONSTRAINT {{ constraint.name }}
+        CHECK ({{ constraint.condition }}) {% if constraint.enforced %}ENFORCED{% endif %};
+
+    {% elif constraint.type == 'key_constraint' %}
+        {% if constraint.primary_key %}
+            ALTER TABLE {{ table_name }}
+            ADD CONSTRAINT {{ constraint.name }}
+            PRIMARY KEY ({{ constraint.key_columns | join(', ') }}{% if constraint.timeseries %} TIMESERIES{% endif %})
+            {% for option in constraint.constraint_options %}{{ option }}{% endfor %};
+
+        {% elif constraint.foreign_key %}
+            ALTER TABLE {{ table_name }}
+            ADD CONSTRAINT {{ constraint.name }}
+            FOREIGN KEY ({{ constraint.foreign_key_columns | join(', ') }})
+            REFERENCES {{ constraint.parent_table }}
+            {% if constraint.parent_columns %}({{ constraint.parent_columns | join(', ') }}){% endif %}
+            {% for option in constraint.foreign_key_options %}{{ option }}{% endfor %};
+        {% endif %}
+    {% endif %}
+{% endmacro %}
+
+{% for constraint in constraints %}
+    {{ generate_constraint_sql(constraint) }}
+{% endfor %}

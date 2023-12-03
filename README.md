@@ -16,7 +16,7 @@ pip install pydantic-databricks
 ### 1. Basic Example Table Creation
 
 ```python
-from pydantic_databricks.models import DatabricksModel
+from pydantic_databricks import DatabricksModel
 from pyspark.sql import SparkSession
 
 spark = SparkSession.builder.getOrCreate()
@@ -31,12 +31,32 @@ class Schema(DatabricksModel):
     
 spark.sql(Schema.create_table())
 ```
-   
-    
 Generated SQL:
 ```sql
 CREATE TABLE test_schema.test (col1 STRING NOT NULL, col2 BIGINT NOT NULL, col3 DOUBLE NOT NULL) USING DELTA; 
 ```
+
+### 2. Setting Grants
+
+```python
+from pydantic_databricks import DatabricksModel, Grant, GrantAction
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.getOrCreate()
+
+class Schema(DatabricksModel):
+    _table_name = "test"
+    _schema_name = "default"
+    _grants = {Grant(action=GrantAction.MODIFY, principal="user1"),
+               Grant(action=GrantAction.SELECT, principal="user2"), }
+
+    col1: str
+
+for grant in Schema.grant_statements():
+    spark.sql(grant)
+```
+   
+    
 
 ## Currently Supported Options
 
@@ -54,8 +74,7 @@ CREATE TABLE test_schema.test (col1 STRING NOT NULL, col2 BIGINT NOT NULL, col3 
 
 ## Coming soon 
 - Support for table and column constraints
-- Support for creating grant statements
-- 
+
 ## Contributing
 
 We welcome contributions to pydantic-databricks! If you'd like to contribute, please follow these steps:

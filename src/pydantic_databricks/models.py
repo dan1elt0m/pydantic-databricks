@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from enum import Enum
-from itertools import chain
 from typing import Any, List
 
 from jinja2 import Template
@@ -24,10 +23,15 @@ class LocationPrefixNotSetError(Exception):
     pass
 
 
+class NoGrantsProvidedError(Exception):
+    pass
+
+
 class GrantAction(Enum):
-    select = "select"
-    remove = "remove"
-    insert = "insert"
+    SELECT = "SELECT"
+    MODIFY = "MODIFY"
+    APPLY_TAG = "APPLY TAG"
+    ALL_PRIVILEGES = "ALL PRIVILEGES"
 
 
 @dataclass(frozen=True, repr=True)
@@ -68,16 +72,21 @@ class DataSource(str, Enum):
 
 def render_create_table_template(table_config: TableConfig) -> str:
     """Renders the jinja template with the table config"""
+    template = get_template("create_table")
+    return template.render(table_dict=table_config.model_dump())
+
+
+def get_template(template_name: str) -> Template:
+    """Renders the jinja template with the table config"""
     from importlib import resources as impresources
 
     from pydantic_databricks import templates
 
-    inp_file = impresources.files(templates) / "create_table.j2"
+    inp_file = impresources.files(templates) / f"{template_name}.j2"
     with inp_file.open("r") as f:
         template_str = f.read()
 
-    template = Template(template_str)
-    return template.render(table_dict=table_config.model_dump())
+    return Template(template_str)
 
 
 class DatabricksModel(SparkBase):
@@ -111,12 +120,16 @@ class DatabricksModel(SparkBase):
 
     @classmethod
     @property
-    def grants(cls) -> frozenset[Grant]:
+    def grants(cls) -> set[Grant]:
         """Returns the grants for the table as a set"""
-        base_grants = frozenset(
-            chain.from_iterable([base.grants for base in cls.__bases__ if hasattr(base, "_grants")]),
-        )
-        return frozenset(cls._get_field("_grants")).union(base_grants)
+        return set(cls._get_field("_grants"))
+
+    @classmethod
+    def grant_statements(cls) -> list[str]:
+        """Returns the grant statements for the table"""
+        if not cls.grants:
+            raise NoGrantsProvidedError
+        return [f"GRANT {grant.action.value} ON {cls.full_table_name} TO `{grant.principal}`" for grant in cls.grants]
 
     @classmethod
     @property
